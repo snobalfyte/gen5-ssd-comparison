@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PCIe Gen5 NVMe SSD Comparison v2 — 2026</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --panel: #11151d;
+    --line: #232a36;
+    --line-soft: #1a2029;
+    --text: #d7dce3;
+    --text-dim: #838d9c;
+    --text-faint: #5c6675;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+    --accent: #6fd68a;
+
+    --sm2508: #4fc3d9;
+    --sm2508-bg: rgba(79,195,217,0.10);
+    --e26: #e0a458;
+    --e26-bg: rgba(224,164,88,0.10);
+    --e28: #6fd68a;
+    --e28-bg: rgba(111,214,138,0.10);
+    --presto: #b083f0;
+    --presto-bg: rgba(176,131,240,0.10);
+    --aries: #ec7fb0;
+    --aries-bg: rgba(236,127,176,0.10);
+    --budget: #8a93a3;
+    --budget-bg: rgba(138,147,163,0.10);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    padding: 40px 32px 80px;
+  }
+
+  .wrap { max-width: 1480px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    margin: 0;
+    color: #f0f2f5;
+  }
+
+  .updated {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 4px 0 20px;
+    max-width: 820px;
+    line-height: 1.5;
+  }
+
+  /* ---- Best picks ---- */
+  .picks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .pick-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .pick-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+  }
+  .pick-drive {
+    font-size: 13.5px;
+    font-weight: 650;
+    color: #f0f2f5;
+    margin-bottom: 3px;
+  }
+  .pick-why {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+
+  /* ---- Controls ---- */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+    align-items: center;
+  }
+  .search-box {
+    flex: 1 1 240px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+  }
+  .search-box:focus { outline: none; border-color: var(--sm2508); }
+  .search-box::placeholder { color: var(--text-faint); }
+
+  select.filter-select {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+  }
+
+  .result-count {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 14px;
+    padding: 10px 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+  .dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+  .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 1280px; }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: #161b25;
+    color: var(--text-faint);
+    text-align: left;
+    font-weight: 600;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--text); }
+  thead th.sorted { color: var(--accent); }
+  thead th .arrow { font-size: 9px; margin-left: 3px; opacity: 0.7; }
+  thead th.no-sort { cursor: default; }
+  thead th.no-sort:hover { color: var(--text-faint); }
+
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line-soft);
+    vertical-align: top;
+    color: var(--text);
+  }
+  tbody tr:hover td { background: #151b25; }
+  tr.group-start td { border-top: 1px solid var(--line); }
+
+  td.model { font-weight: 600; color: #eef1f5; white-space: nowrap; }
+  td.model .brand {
+    display: block; font-weight: 400; color: var(--text-faint);
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1px;
+  }
+  td.cap { font-family: var(--mono); font-weight: 600; color: var(--text); white-space: nowrap; }
+  td.part { font-family: var(--mono); font-size: 11.5px; color: var(--text-dim); white-space: nowrap; }
+  td.msrp { font-family: var(--mono); font-size: 11.5px; color: var(--text); white-space: nowrap; }
+  td.date { font-family: var(--mono); font-size: 11.5px; color: var(--text-faint); white-space: nowrap; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 5px;
+    font-family: var(--mono); font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge.sm2508 { color: var(--sm2508); background: var(--sm2508-bg); }
+  .badge.sm2508 .dot { background: var(--sm2508); }
+  .badge.e26 { color: var(--e26); background: var(--e26-bg); }
+  .badge.e26 .dot { background: var(--e26); }
+  .badge.e28 { color: var(--e28); background: var(--e28-bg); }
+  .badge.e28 .dot { background: var(--e28); }
+  .badge.presto { color: var(--presto); background: var(--presto-bg); }
+  .badge.presto .dot { background: var(--presto); }
+  .badge.aries { color: var(--aries); background: var(--aries-bg); }
+  .badge.aries .dot { background: var(--aries); }
+  .badge.budget { color: var(--budget); background: var(--budget-bg); }
+  .badge.budget .dot { background: var(--budget); }
+
+  td.nand { color: var(--text-dim); font-size: 12px; max-width: 190px; }
+  td.speed { font-family: var(--mono); white-space: nowrap; }
+  td.speed .r { color: #8fd6ea; }
+  td.speed .w { color: #e8b976; }
+  td.speed .sep { color: var(--text-faint); }
+  td.tbw { font-family: var(--mono); color: var(--text-dim); white-space: nowrap; }
+  td.notes { color: var(--text-dim); font-size: 12px; max-width: 250px; line-height: 1.45; }
+
+  .own-tag {
+    display: inline-block; margin-left: 6px; font-size: 9.5px; font-family: var(--mono);
+    color: #6fd68a; background: rgba(111,214,138,0.14); padding: 1px 5px; border-radius: 4px;
+    letter-spacing: 0.03em; vertical-align: middle;
+  }
+
+  .empty-state {
+    padding: 40px; text-align: center; color: var(--text-faint); font-size: 13px;
+  }
+
+  footer {
+    margin-top: 22px; font-size: 12px; color: var(--text-faint); line-height: 1.6; max-width: 920px;
+  }
+  footer strong { color: var(--text-dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>PCIe Gen5 NVMe SSD Comparison</h1>
+    <span class="updated">v2 · updated Jul 16, 2026</span>
+  </header>
+  <p class="subtitle">
+    All drives: PCIe 5.0 x4, M.2 2280, NVMe 2.0. One row per capacity, sorted alphabetically by manufacturer by default — click any column header to re-sort. Colors mark the controller family. Figures are manufacturer-rated; treat as a snapshot.
+  </p>
+
+  <div class="picks" id="picks"></div>
+
+  <div class="controls">
+    <input type="text" id="searchBox" class="search-box" placeholder="Search model, controller, NAND, part number...">
+    <select id="controllerFilter" class="filter-select">
+      <option value="">All controllers</option>
+      <option value="sm2508">Silicon Motion SM2508</option>
+      <option value="e26">Phison E26</option>
+      <option value="e28">Phison E28</option>
+      <option value="presto">Samsung Presto</option>
+      <option value="aries">SK hynix Aries</option>
+      <option value="budget">InnoGrit / budget</option>
+    </select>
+    <select id="capFilter" class="filter-select">
+      <option value="">All capacities</option>
+      <option value="1">1TB</option>
+      <option value="2">2TB</option>
+      <option value="4">4TB</option>
+      <option value="8">8TB</option>
+    </select>
+    <span class="result-count" id="resultCount"></span>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="dot" style="background:#4fc3d9"></span>Silicon Motion SM2508</div>
+    <div class="legend-item"><span class="dot" style="background:#e0a458"></span>Phison E26</div>
+    <div class="legend-item"><span class="dot" style="background:#6fd68a"></span>Phison E28</div>
+    <div class="legend-item"><span class="dot" style="background:#b083f0"></span>Samsung Presto (in-house)</div>
+    <div class="legend-item"><span class="dot" style="background:#ec7fb0"></span>SK hynix Aries (in-house)</div>
+    <div class="legend-item"><span class="dot" style="background:#8a93a3"></span>InnoGrit / budget</div>
+  </div>
+
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr id="headerRow">
+        <th data-key="brand">Model<span class="arrow"></span></th>
+        <th data-key="date">Released<span class="arrow"></span></th>
+        <th data-key="cap_val">Capacity<span class="arrow"></span></th>
+        <th class="no-sort">Part Number</th>
+        <th data-key="price_val">MSRP<span class="arrow"></span></th>
+        <th class="no-sort">Controller</th>
+        <th class="no-sort">NAND</th>
+        <th class="no-sort">DRAM</th>
+        <th data-key="read_val">Seq Read / Write<span class="arrow"></span></th>
+        <th data-key="tbw_val">Endurance<span class="arrow"></span></th>
+        <th class="no-sort">Notes</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+  </div>
+  <div class="empty-state" id="emptyState" style="display:none;">No drives match your search/filter.</div>
+
+  <footer>
+    <strong>Reading the colors:</strong> rows sharing a controller badge color run the same physical controller silicon. Values marked with <code>~</code> are approximate. Rows marked "Not offered" indicate that capacity was never released for that model. MSRP is launch/review-time pricing in USD unless marked otherwise (Biwin's is GBP); a dash means no verifiable price was found. Click column headers to sort; use the search box or dropdowns to filter.
+  </footer>
+
+</div>
+
+<script>
+const SSD_DATA = [{"brand": "Acer", "model": "Predator GM9000", "date": "~Aug 2025", "cap": "1TB", "part": "Not listed by SKU", "msrp": "$150", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L B58R TLC", "dram": "2GB LPDDR4-3200", "speed": "~13,000R / ~10,000W", "tbw": "800 TBW", "notes": "$150 MSRP; near-identical hardware to Biwin Black Opal X570 Pro with tweaked firmware", "read_val": 13000, "write_val": 10000, "tbw_val": 800, "price_val": 150.0, "cap_val": 1}, {"brand": "Acer", "model": "Predator GM9000", "date": "~Aug 2025", "cap": "2TB", "part": "Not listed by SKU", "msrp": "$215", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L B58R TLC", "dram": "2GB LPDDR4-3200", "speed": "14,000R / 13,000W", "tbw": "1,600 TBW", "notes": "$215 MSRP; single-sided 2.5mm design fits laptops, a rarity for Gen5", "read_val": 14000, "write_val": 13000, "tbw_val": 1600, "price_val": 215.0, "cap_val": 2}, {"brand": "Acer", "model": "Predator GM9000", "date": "~Aug 2025", "cap": "4TB", "part": "Not listed by SKU", "msrp": "$430", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L B58R TLC", "dram": "2GB LPDDR4-3200", "speed": "14,000R / 13,000W", "tbw": "3,200 TBW", "notes": "$430 MSRP", "read_val": 14000, "write_val": 13000, "tbw_val": 3200, "price_val": 430.0, "cap_val": 4}, {"brand": "Acer", "model": "Predator GM9000", "date": "TBD", "cap": "8TB", "part": "Not listed by SKU", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L B58R TLC", "dram": "LPDDR4", "speed": "~14,000R / ~13,000W", "tbw": "~6,400 TBW", "notes": "Officially advertised \"up to 8TB capacity\" on Acer's product page; retail availability/pricing not yet confirmed", "read_val": 14000, "write_val": 13000, "tbw_val": 6400, "price_val": null, "cap_val": 8}, {"brand": "ADATA", "model": "Legend 970", "date": "Sep 2023", "cap": "1TB", "part": "Not listed by SKU", "msrp": "$190", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L B58R TLC", "dram": "2GB DDR4-2666", "speed": "9,500R / 8,500W", "tbw": "700 TBW", "notes": "One of the very first Gen5 drives to market; active-fan heatsink included", "read_val": 9500, "write_val": 8500, "tbw_val": 700, "price_val": 190.0, "cap_val": 1}, {"brand": "ADATA", "model": "Legend 970", "date": "Sep 2023", "cap": "2TB", "part": "Not listed by SKU", "msrp": "$330", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L B58R TLC", "dram": "4GB DDR4-4266", "speed": "10,000R / 10,000W", "tbw": "1,400 TBW", "notes": "Flagship capacity for this model; among the slowest of the Phison E26 field at ~10 GB/s", "read_val": 10000, "write_val": 10000, "tbw_val": 1400, "price_val": 330.0, "cap_val": 2}, {"brand": "ADATA", "model": "Legend 970", "date": "\u2014", "cap": "4TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered \u2014 base Legend 970 shipped only in 1TB/2TB (see Legend 970 Pro below for larger capacities)", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 4}, {"brand": "ADATA", "model": "Legend 970", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "ADATA", "model": "Legend 970 Pro", "date": "Aug 2024", "cap": "1TB", "part": "Not listed by SKU", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "Micron 232L TLC", "dram": "Yes", "speed": "13,000R / 5,800W", "tbw": "740 TBW", "notes": "Write speed drops sharply at 1TB \u2014 reviewers called it \"more pretender than contender\"", "read_val": 13000, "write_val": 5800, "tbw_val": 740, "price_val": null, "cap_val": 1}, {"brand": "ADATA", "model": "Legend 970 Pro", "date": "Aug 2024", "cap": "2TB", "part": "Not listed by SKU", "msrp": "$300", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "Micron 232L TLC", "dram": "Yes", "speed": "~14,000R / ~11,000W", "tbw": "1,480 TBW", "notes": "$300 MSRP; SSD-powered fan avoids external power cabling", "read_val": 14000, "write_val": 11000, "tbw_val": 1480, "price_val": 300.0, "cap_val": 2}, {"brand": "ADATA", "model": "Legend 970 Pro", "date": "Aug 2024", "cap": "4TB", "part": "Not listed by SKU", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "Micron 232L TLC", "dram": "Yes", "speed": "14,000R / 11,000W", "tbw": "2,960 TBW", "notes": "", "read_val": 14000, "write_val": 11000, "tbw_val": 2960, "price_val": null, "cap_val": 4}, {"brand": "ADATA", "model": "Legend 970 Pro", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Biwin", "model": "Black Opal X570 Pro", "date": "~Early 2025", "cap": "1TB", "part": "Not listed by SKU", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L TLC", "dram": "Yes (LPDDR4)", "speed": "14,000R / 10,500W", "tbw": "750 TBW", "notes": "", "read_val": 14000, "write_val": 10500, "tbw_val": 750, "price_val": null, "cap_val": 1}, {"brand": "Biwin", "model": "Black Opal X570 Pro", "date": "~Early 2025", "cap": "2TB", "part": "Not listed by SKU", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L TLC", "dram": "Yes (LPDDR4)", "speed": "14,000R / 13,000W", "tbw": "1,500 TBW", "notes": "", "read_val": 14000, "write_val": 13000, "tbw_val": 1500, "price_val": null, "cap_val": 2}, {"brand": "Biwin", "model": "Black Opal X570 Pro", "date": "~Early 2025", "cap": "4TB", "part": "Not listed by SKU", "msrp": "\u00a3459.99", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L TLC", "dram": "4GB LPDDR4", "speed": "14,000R / 13,000W", "tbw": "3,000 TBW", "notes": "\u00a3459.99 MSRP; one review's fastest-tested drive at the time; same silicon as GM9000/Predator", "read_val": 14000, "write_val": 13000, "tbw_val": 3000, "price_val": 459.99, "cap_val": 4}, {"brand": "Biwin", "model": "Black Opal X570 Pro", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not yet released", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Corsair", "model": "MP700 Elite", "date": "~2025", "cap": "1TB", "part": "CSSD-F1000GBMP700ELT", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia BiCS8 218L TLC", "dram": "Yes", "speed": "~9,500R", "tbw": "~600 TBW", "notes": "", "read_val": 9500, "write_val": 0, "tbw_val": 600, "price_val": null, "cap_val": 1}, {"brand": "Corsair", "model": "MP700 Elite", "date": "~2025", "cap": "2TB", "part": "CSSD-F2000GBMP700ELT", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia BiCS8 218L TLC", "dram": "Yes", "speed": "~10,000R", "tbw": "~1,200 TBW", "notes": "Entry-level Gen5; better power efficiency than Pro/Pro XT", "read_val": 10000, "write_val": 0, "tbw_val": 1200, "price_val": null, "cap_val": 2}, {"brand": "Corsair", "model": "MP700 Elite", "date": "~2025", "cap": "4TB", "part": "CSSD-F4000GBMP700ELT", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia BiCS8 218L TLC", "dram": "Yes", "speed": "~10,000R", "tbw": "~2,400 TBW", "notes": "", "read_val": 10000, "write_val": 0, "tbw_val": 2400, "price_val": null, "cap_val": 4}, {"brand": "Corsair", "model": "MP700 Elite", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered \u2014 Corsair has not released an 8TB Elite SKU", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Corsair", "model": "MP700 Pro / Pro SE", "date": "Nov 2023", "cap": "1TB", "part": "CSSD-F1000GBMP700PRO", "msrp": "$154.99", "controller_class": "e26", "controller": "E26", "nand": "Micron or Kioxia TLC (varies by batch)", "dram": "Yes", "speed": "~12,000R / ~9,500W", "tbw": "~600 TBW", "notes": "", "read_val": 12000, "write_val": 9500, "tbw_val": 600, "price_val": 154.99, "cap_val": 1}, {"brand": "Corsair", "model": "MP700 Pro / Pro SE", "date": "Nov 2023", "cap": "2TB", "part": "CSSD-F2000GBMP700PRO", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron or Kioxia TLC (varies by batch)", "dram": "Yes", "speed": "12,400R / 11,800W", "tbw": "~1,200 TBW", "notes": "Pro SE adds active-fan cooling variant", "read_val": 12400, "write_val": 11800, "tbw_val": 1200, "price_val": null, "cap_val": 2}, {"brand": "Corsair", "model": "MP700 Pro / Pro SE", "date": "Nov 2023", "cap": "4TB", "part": "CSSD-F4000GBMP700PRO", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron or Kioxia TLC (varies by batch)", "dram": "Yes", "speed": "~12,400R / ~11,800W", "tbw": "~2,400 TBW", "notes": "", "read_val": 12400, "write_val": 11800, "tbw_val": 2400, "price_val": null, "cap_val": 4}, {"brand": "Corsair", "model": "MP700 Pro / Pro SE", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered \u2014 Phison E26 is capped at 4TB", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Corsair", "model": "MP700 Pro XT", "date": "Oct 2025", "cap": "1TB", "part": "CSSD-F1000GBMP700PROXT", "msrp": "$159", "controller_class": "e28", "controller": "E28", "nand": "Kioxia BiCS8 218L TLC", "dram": "SK hynix, 1GB/TB", "speed": "~14,900R / ~11,000W", "tbw": "700 TBW", "notes": "$159 MSRP", "read_val": 14900, "write_val": 11000, "tbw_val": 700, "price_val": 159.0, "cap_val": 1}, {"brand": "Corsair", "model": "MP700 Pro XT", "date": "Oct 2025", "cap": "2TB", "part": "CSSD-F2000GBMP700PROXT", "msrp": "$249", "controller_class": "e28", "controller": "E28", "nand": "Kioxia BiCS8 218L TLC", "dram": "SK hynix, 1GB/TB", "speed": "14,900R / 14,500W", "tbw": "1,400 TBW", "notes": "$249 MSRP; near-Gen4 power draw (~5.7\u20136.5W), no heatsink needed for most workloads", "read_val": 14900, "write_val": 14500, "tbw_val": 1400, "price_val": 249.0, "cap_val": 2}, {"brand": "Corsair", "model": "MP700 Pro XT", "date": "Oct 2025", "cap": "4TB", "part": "CSSD-F4000GBMP700PROXT", "msrp": "$459", "controller_class": "e28", "controller": "E28", "nand": "Kioxia BiCS8 218L TLC", "dram": "SK hynix, 1GB/TB", "speed": "~14,900R / ~14,000W", "tbw": "2,800 TBW", "notes": "$459 MSRP; single-sided design even at 4TB", "read_val": 14900, "write_val": 14000, "tbw_val": 2800, "price_val": 459.0, "cap_val": 4}, {"brand": "Corsair", "model": "MP700 Pro XT", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "e28", "controller": "E28", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered yet \u2014 Phison has confirmed E28-based 8TB SSDs are coming, but no branded model has shipped as of this writing", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Crucial", "model": "T705", "date": "Mar 2024", "cap": "1TB", "part": "CT1000T705SSD3", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L TLC", "dram": "Yes", "speed": "~13,500R / ~10,000W", "tbw": "~600 TBW", "notes": "Discontinued \u2014 Micron exited consumer market Feb 2026", "read_val": 13500, "write_val": 10000, "tbw_val": 600, "price_val": null, "cap_val": 1}, {"brand": "Crucial", "model": "T705", "date": "Mar 2024", "cap": "2TB", "part": "CT2000T705SSD3", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L TLC", "dram": "Yes", "speed": "14,500R / 12,700W", "tbw": "~1,200 TBW", "notes": "Discontinued \u2014 Micron exited consumer market Feb 2026", "read_val": 14500, "write_val": 12700, "tbw_val": 1200, "price_val": null, "cap_val": 2}, {"brand": "Crucial", "model": "T705", "date": "Mar 2024", "cap": "4TB", "part": "CT4000T705SSD3", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L TLC", "dram": "Yes", "speed": "14,500R / 12,700W", "tbw": "~2,400 TBW", "notes": "Discontinued \u2014 Micron exited consumer market Feb 2026", "read_val": 14500, "write_val": 12700, "tbw_val": 2400, "price_val": null, "cap_val": 4}, {"brand": "Crucial", "model": "T705", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered \u2014 Phison E26 is capped at 4TB, and the line is now discontinued", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Crucial", "model": "T710", "date": "Aug 2025", "cap": "1TB", "part": "CT1000T710SSD5", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron (own fab) 276L G9 TLC", "dram": "Yes", "speed": "~13,000R / ~10,000W", "tbw": "~600 TBW", "notes": "", "read_val": 13000, "write_val": 10000, "tbw_val": 600, "price_val": null, "cap_val": 1}, {"brand": "Crucial", "model": "T710", "date": "Aug 2025", "cap": "2TB", "part": "CT2000T710SSD5", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron (own fab) 276L G9 TLC", "dram": "Yes", "speed": "~14,000R / ~12,000W", "tbw": "~1,200 TBW", "notes": "Underperforms SN8100/Renegade despite same controller", "read_val": 14000, "write_val": 12000, "tbw_val": 1200, "price_val": null, "cap_val": 2}, {"brand": "Crucial", "model": "T710", "date": "Aug 2025", "cap": "4TB", "part": "CT4000T710SSD5", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron (own fab) 276L G9 TLC", "dram": "Yes", "speed": "~14,000R / ~12,000W", "tbw": "~2,400 TBW", "notes": "", "read_val": 14000, "write_val": 12000, "tbw_val": 2400, "price_val": null, "cap_val": 4}, {"brand": "Crucial", "model": "T710", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered \u2014 Micron exited the consumer SSD/RAM market (Feb 2026) before an 8TB T710 shipped", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Gigabyte", "model": "Aorus Gen5 10000/14000", "date": "~2023", "cap": "1TB", "part": "AG510K1TB", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Varies (Kioxia/Micron by batch)", "dram": "DDR4", "speed": "10,000R / ~9,000W", "tbw": "~600 TBW", "notes": "\"10000\" model tier", "read_val": 10000, "write_val": 9000, "tbw_val": 600, "price_val": null, "cap_val": 1}, {"brand": "Gigabyte", "model": "Aorus Gen5 10000/14000", "date": "~2023", "cap": "2TB", "part": "AG514K2TB", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Varies (Kioxia/Micron by batch)", "dram": "DDR4", "speed": "12,400R / 11,800W", "tbw": "~1,200 TBW", "notes": "\"14000\" model tier; includes RGB heatsink", "read_val": 12400, "write_val": 11800, "tbw_val": 1200, "price_val": null, "cap_val": 2}, {"brand": "Gigabyte", "model": "Aorus Gen5 10000/14000", "date": "~2023", "cap": "4TB", "part": "AG514K4TB", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Varies (Kioxia/Micron by batch)", "dram": "DDR4", "speed": "12,400R / 11,800W", "tbw": "~2,400 TBW", "notes": "", "read_val": 12400, "write_val": 11800, "tbw_val": 2400, "price_val": null, "cap_val": 4}, {"brand": "Gigabyte", "model": "Aorus Gen5 10000/14000", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered \u2014 Phison E26 is capped at 4TB", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Kingston", "model": "FURY Renegade G5", "date": "May 2025", "cap": "1TB", "part": "SFYRD1000G", "msrp": "$165\u2013200", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia BiCS8 218L TLC", "dram": "Yes", "speed": "~14,800R / ~10,000W", "tbw": "1,000 TBW", "notes": "Rated 1,000 TBW/TB \u2014 notably higher endurance than most Gen5 rivals", "read_val": 14800, "write_val": 10000, "tbw_val": 1000, "price_val": 165.0, "cap_val": 1}, {"brand": "Kingston", "model": "FURY Renegade G5", "date": "May 2025", "cap": "2TB", "part": "SFYRD2000G", "msrp": "$240", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia BiCS8 218L TLC", "dram": "Yes", "speed": "14,800R / 14,000W", "tbw": "2,000 TBW", "notes": "Trails SN8100 slightly in speed, but leads it in endurance", "read_val": 14800, "write_val": 14000, "tbw_val": 2000, "price_val": 240.0, "cap_val": 2}, {"brand": "Kingston", "model": "FURY Renegade G5", "date": "May 2025", "cap": "4TB", "part": "SFYRD4000G", "msrp": "$450\u2013485", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia BiCS8 218L TLC", "dram": "Yes", "speed": "14,800R / 14,000W", "tbw": "4,000 TBW", "notes": "No 8TB model yet; nearly double SN8100's 2,400 TBW at 4TB", "read_val": 14800, "write_val": 14000, "tbw_val": 4000, "price_val": 450.0, "cap_val": 4}, {"brand": "Kingston", "model": "FURY Renegade G5", "date": "~Nov 2025", "cap": "8TB", "part": "Not listed by SKU", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia BiCS8 218L TLC", "dram": "Yes", "speed": "14,800R / 14,000W", "tbw": "~8,000 TBW", "notes": "Was \"slated to show up in November\" 2025 per initial reviews; scaling Kingston's 1,000 TBW/TB rating to 8TB", "read_val": 14800, "write_val": 14000, "tbw_val": 8000, "price_val": null, "cap_val": 8}, {"brand": "Lexar", "model": "NM1090 Pro", "date": "Jun 2025", "cap": "1TB", "part": "LNM1090P001T-RNNNG", "msrp": "$180", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L G8 TLC (Longsys-rebranded)", "dram": "Foresee LPDDR4X", "speed": "14,000R / 10,000W", "tbw": "700 TBW", "notes": "Same SM2508 platform as SN8100/Renegade G5/T710, but older Micron G8 NAND \u2014 a half-generation behind on flash", "read_val": 14000, "write_val": 10000, "tbw_val": 700, "price_val": 180.0, "cap_val": 1}, {"brand": "Lexar", "model": "NM1090 Pro", "date": "Jun 2025", "cap": "2TB", "part": "LNM1090P002T-RNNNG", "msrp": "$270", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L G8 TLC (Longsys-rebranded)", "dram": "Foresee LPDDR4X", "speed": "14,000R / 13,000W", "tbw": "1,400 TBW", "notes": "Best $/GB entry into \"real\" Gen5 speeds; ~1-3% behind Renegade G5/T710 in benchmarks", "read_val": 14000, "write_val": 13000, "tbw_val": 1400, "price_val": 270.0, "cap_val": 2}, {"brand": "Lexar", "model": "NM1090 Pro", "date": "Jun 2025", "cap": "4TB", "part": "LNM1090P004T-RNNNG", "msrp": "$495", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L G8 TLC (Longsys-rebranded)", "dram": "Foresee LPDDR4X", "speed": "14,000R / 13,000W", "tbw": "2,800 TBW", "notes": "", "read_val": 14000, "write_val": 13000, "tbw_val": 2800, "price_val": 495.0, "cap_val": 4}, {"brand": "Lexar", "model": "NM1090 Pro", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not yet released \u2014 SM2508 supports it, but Lexar hasn't shipped an 8TB NM1090 Pro as of this writing", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Patriot", "model": "Viper PV553", "date": "Feb 2024", "cap": "1TB", "part": "PV553P1TBM28H", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit", "nand": "232L TLC (maker unspecified)", "dram": "Yes", "speed": "11,700R / 9,500W", "tbw": "700 TBW", "notes": "First-gen Patriot Gen5 drive; 1TB notably slower than 2TB/4TB siblings", "read_val": 11700, "write_val": 9500, "tbw_val": 700, "price_val": null, "cap_val": 1}, {"brand": "Patriot", "model": "Viper PV553", "date": "Feb 2024", "cap": "2TB", "part": "PV553P2TBM28H", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit", "nand": "232L TLC (maker unspecified)", "dram": "Yes", "speed": "12,400R / 11,800W", "tbw": "1,400 TBW", "notes": "Active blower-fan cooling design", "read_val": 12400, "write_val": 11800, "tbw_val": 1400, "price_val": null, "cap_val": 2}, {"brand": "Patriot", "model": "Viper PV553", "date": "Feb 2024", "cap": "4TB", "part": "PV553P4TBM28H", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit", "nand": "232L TLC (maker unspecified)", "dram": "Yes", "speed": "12,400R / 11,800W", "tbw": "3,000 TBW", "notes": "", "read_val": 12400, "write_val": 11800, "tbw_val": 3000, "price_val": null, "cap_val": 4}, {"brand": "Patriot", "model": "Viper PV573", "date": "Oct 2024", "cap": "1TB", "part": "Not publicly listed by SKU", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "232L TLC (maker unspecified)", "dram": "Yes", "speed": "~14,000R / ~12,000W", "tbw": "~700 TBW", "notes": "Successor to PV553 with same \"vital specs\" per reviewers, but higher headline speed rating; 8,000 RPM active blower cooler", "read_val": 14000, "write_val": 12000, "tbw_val": 700, "price_val": null, "cap_val": 1}, {"brand": "Patriot", "model": "Viper PV573", "date": "Oct 2024", "cap": "2TB", "part": "Not publicly listed by SKU", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "232L TLC (maker unspecified)", "dram": "Yes", "speed": "14,000R / 12,000W", "tbw": "~1,400 TBW", "notes": "Rated to stay below 45\u00b0C under stress thanks to blower cooler", "read_val": 14000, "write_val": 12000, "tbw_val": 1400, "price_val": null, "cap_val": 2}, {"brand": "Patriot", "model": "Viper PV573", "date": "Oct 2024", "cap": "4TB", "part": "Not publicly listed by SKU", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "232L TLC (maker unspecified)", "dram": "Yes", "speed": "14,000R / 12,000W", "tbw": "~3,000 TBW", "notes": "", "read_val": 14000, "write_val": 12000, "tbw_val": 3000, "price_val": null, "cap_val": 4}, {"brand": "Patriot", "model": "Viper PV593", "date": "Jul 2025", "cap": "1TB", "part": "Not publicly listed by SKU", "msrp": "$159.99", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L G8 TLC (\"Fortis Flash\" B58r)", "dram": "Yes (DDR4)", "speed": "14,000R / 10,000W", "tbw": "700 TBW", "notes": "$160 MSRP; 5-year warranty (longest in this list)", "read_val": 14000, "write_val": 10000, "tbw_val": 700, "price_val": 159.99, "cap_val": 1}, {"brand": "Patriot", "model": "Viper PV593", "date": "Jul 2025", "cap": "2TB", "part": "Not publicly listed by SKU", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L G8 TLC (\"Fortis Flash\" B58r)", "dram": "Yes (DDR4)", "speed": "14,000R / 13,000W", "tbw": "1,400 TBW", "notes": "Patriot's flagship Gen5 drive; same silicon family as SN8100/T710/Renegade G5/NM1090 Pro", "read_val": 14000, "write_val": 13000, "tbw_val": 1400, "price_val": null, "cap_val": 2}, {"brand": "Patriot", "model": "Viper PV593", "date": "Jul 2025", "cap": "4TB", "part": "Not publicly listed by SKU", "msrp": "$399.99", "controller_class": "sm2508", "controller": "SM2508", "nand": "Micron 232L G8 TLC (\"Fortis Flash\" B58r)", "dram": "Yes (DDR4)", "speed": "14,000R / 13,000W", "tbw": "3,000 TBW", "notes": "$400 MSRP at review; runs cooler than most Phison E26 rivals", "read_val": 14000, "write_val": 13000, "tbw_val": 3000, "price_val": 399.99, "cap_val": 4}, {"brand": "PNY", "model": "CS3250", "date": "Oct 2025", "cap": "1TB", "part": "M280CS3250-1TB-TB", "msrp": "$125.99", "controller_class": "e28", "controller": "E28", "nand": "SanDisk BiCS8 218L TLC", "dram": "2GB Hynix LPDDR4-4266", "speed": "14,900R / 13,500W", "tbw": "~600 TBW", "notes": "$125.99 launch price; same E28+BiCS8 combo as Corsair MP700 Pro XT", "read_val": 14900, "write_val": 13500, "tbw_val": 600, "price_val": 125.99, "cap_val": 1}, {"brand": "PNY", "model": "CS3250", "date": "Oct 2025", "cap": "2TB", "part": "M280CS3250-2TB-TB", "msrp": "$219.99", "controller_class": "e28", "controller": "E28", "nand": "SanDisk BiCS8 218L TLC", "dram": "2GB Hynix LPDDR4-4266", "speed": "14,900R / ~14,100W", "tbw": "1,200 TBW", "notes": "$219.99 launch price; tested write speed (14,095 MB/s) slightly exceeded the advertised 14,000 MB/s rating", "read_val": 14900, "write_val": 14100, "tbw_val": 1200, "price_val": 219.99, "cap_val": 2}, {"brand": "PNY", "model": "CS3250", "date": "Oct 2025", "cap": "4TB", "part": "M280CS3250-4TB-TB", "msrp": "\u2014", "controller_class": "e28", "controller": "E28", "nand": "SanDisk BiCS8 218L TLC", "dram": "Hynix LPDDR4-4266", "speed": "~14,900R / ~14,000W", "tbw": "~2,400 TBW", "notes": "Announced as \"coming soon\" at October 2025 launch alongside the 1TB/2TB models", "read_val": 14900, "write_val": 14000, "tbw_val": 2400, "price_val": null, "cap_val": 4}, {"brand": "PNY", "model": "CS3250", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "e28", "controller": "E28", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered \u2014 Phison E28 8TB SKUs are on Phison's roadmap industry-wide but not shipping on this drive yet", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Sabrent", "model": "Rocket 5", "date": "Feb 2024", "cap": "1TB", "part": "SB-RKT5P-1TB", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron/Kioxia TLC", "dram": "Yes", "speed": "~13,500R / ~10,000W", "tbw": "~600 TBW", "notes": "", "read_val": 13500, "write_val": 10000, "tbw_val": 600, "price_val": null, "cap_val": 1}, {"brand": "Sabrent", "model": "Rocket 5", "date": "Feb 2024", "cap": "2TB", "part": "SB-RKT5P-2TB", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron/Kioxia TLC", "dram": "Yes", "speed": "14,000R / 12,000W", "tbw": "~1,200 TBW", "notes": "Comparable to Crucial T705 in real-world numbers", "read_val": 14000, "write_val": 12000, "tbw_val": 1200, "price_val": null, "cap_val": 2}, {"brand": "Sabrent", "model": "Rocket 5", "date": "Feb 2024", "cap": "4TB", "part": "SB-RKT5P-4TB", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron/Kioxia TLC", "dram": "Yes", "speed": "14,000R / 12,000W", "tbw": "~2,400 TBW", "notes": "", "read_val": 14000, "write_val": 12000, "tbw_val": 2400, "price_val": null, "cap_val": 4}, {"brand": "Sabrent", "model": "Rocket 5", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered \u2014 Phison E26 is capped at 4TB", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Samsung", "model": "9100 Pro", "date": "Mar 2025", "cap": "1TB", "part": "MZ-V9P1T0BW", "msrp": "$200", "controller_class": "presto", "controller": "Presto", "nand": "Samsung 236L V8 TLC V-NAND", "dram": "LPDDR4X", "speed": "~14,700R / ~10,000W", "tbw": "600 TBW", "notes": "", "read_val": 14700, "write_val": 10000, "tbw_val": 600, "price_val": 200.0, "cap_val": 1}, {"brand": "Samsung", "model": "9100 Pro", "date": "Mar 2025", "cap": "2TB", "part": "MZ-V9P2T0BW", "msrp": "$300", "controller_class": "presto", "controller": "Presto", "nand": "Samsung 236L V8 TLC V-NAND", "dram": "LPDDR4X", "speed": "14,800R / 13,400W", "tbw": "1,200 TBW", "notes": "Best sequential read numbers; runs cooler than most flagships", "read_val": 14800, "write_val": 13400, "tbw_val": 1200, "price_val": 300.0, "cap_val": 2}, {"brand": "Samsung", "model": "9100 Pro", "date": "Mar 2025", "cap": "4TB", "part": "MZ-V9P4T0BW", "msrp": "$550", "controller_class": "presto", "controller": "Presto", "nand": "Samsung 236L V8 TLC V-NAND", "dram": "LPDDR4X", "speed": "14,700R / 13,300W", "tbw": "2,400 TBW", "notes": "Premium pricing (~$0.14/GB); dual-package design", "read_val": 14700, "write_val": 13300, "tbw_val": 2400, "price_val": 550.0, "cap_val": 4}, {"brand": "Samsung", "model": "9100 Pro", "date": "Early 2026", "cap": "8TB", "part": "MZ-V9P8T0BW", "msrp": "\u2014", "controller_class": "presto", "controller": "Presto", "nand": "Samsung 236L V8 TLC V-NAND", "dram": "LPDDR4X", "speed": "14,800R / 13,400W", "tbw": "4,800 TBW", "notes": "Reviewed by StorageReview as maintaining top-tier performance at full scale \u2014 ideal for AI, 8K video, and large game libraries", "read_val": 14800, "write_val": 13400, "tbw_val": 4800, "price_val": null, "cap_val": 8}, {"brand": "SanDisk", "model": "Optimus GX Pro 8100", "date": "Jan 2026", "cap": "1TB", "part": "SDSP82100TAN", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia/SanDisk BiCS8 218L TLC", "dram": "LPDDR4", "speed": "~14,900R / ~7,500W", "tbw": "~600 TBW", "notes": "Identical hardware to the WD_Black SN8100 \u2014 rebranded under SanDisk following the WD/SanDisk split; the 1TB isn't confirmed to be sold separately from the 2/4/8TB lineup", "read_val": 14900, "write_val": 7500, "tbw_val": 600, "price_val": null, "cap_val": 1}, {"brand": "SanDisk", "model": "Optimus GX Pro 8100", "date": "Jan 2026", "cap": "2TB", "part": "SDSP82200TAN", "msrp": "$699.99*", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia/SanDisk BiCS8 218L TLC", "dram": "LPDDR4", "speed": "14,900R / 14,000W", "tbw": "1,200 TBW", "notes": "*Listed price seems steep vs. the SN8100 2TB (~$220) \u2014 likely reflects 2026 NAND/DRAM shortage pricing rather than a hardware difference. Same silicon as SN8100 2TB", "read_val": 14900, "write_val": 14000, "tbw_val": 1200, "price_val": 699.99, "cap_val": 2}, {"brand": "SanDisk", "model": "Optimus GX Pro 8100", "date": "Jan 2026", "cap": "4TB", "part": "Not confirmed by SKU", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia/SanDisk BiCS8 218L TLC", "dram": "LPDDR4", "speed": "14,900R / 14,000W", "tbw": "2,400 TBW", "notes": "Same silicon as SN8100 4TB; heatsink variant available", "read_val": 14900, "write_val": 14000, "tbw_val": 2400, "price_val": null, "cap_val": 4}, {"brand": "SanDisk", "model": "Optimus GX Pro 8100", "date": "Jan 2026", "cap": "8TB", "part": "Not confirmed by SKU", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia/SanDisk BiCS8 218L TLC", "dram": "LPDDR4", "speed": "14,900R / 14,000W", "tbw": "4,800 TBW", "notes": "This is the capacity that made the Optimus GX Pro 8100 name \u2014 WD_Black's SN8100 doesn't ship at 8TB under its own branding; Tom's Hardware called it \"the undisputed king of high-capacity PCIe 5.0 SSDs\"", "read_val": 14900, "write_val": 14000, "tbw_val": 4800, "price_val": null, "cap_val": 8}, {"brand": "Seagate", "model": "FireCuda 540", "date": "~Early 2024", "cap": "1TB", "part": "ZP1000GM3A013", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L TLC", "dram": "Yes", "speed": "~9,500R", "tbw": "High (TBW)", "notes": "Seagate rates endurance generously", "read_val": 9500, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 1}, {"brand": "Seagate", "model": "FireCuda 540", "date": "~Early 2024", "cap": "2TB", "part": "ZP2000GM3A013", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L TLC", "dram": "Yes", "speed": "~10,000R", "tbw": "High (TBW)", "notes": "Runs hottest of the group under sustained load", "read_val": 10000, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 2}, {"brand": "Seagate", "model": "FireCuda 540", "date": "~Early 2024", "cap": "4TB", "part": "ZP4000GM3A013", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L TLC", "dram": "Yes", "speed": "~10,000R", "tbw": "High (TBW)", "notes": "Seagate rates endurance generously", "read_val": 10000, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 4}, {"brand": "Seagate", "model": "FireCuda 540", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered \u2014 Phison E26 is capped at 4TB", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "SK hynix", "model": "Platinum P51", "date": "~Late 2025", "cap": "1TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "aries", "controller": "Aries", "nand": "SK hynix 238L+ TLC", "dram": "Yes", "speed": "~13,500R", "tbw": "~600 TBW", "notes": "", "read_val": 13500, "write_val": 0, "tbw_val": 600, "price_val": null, "cap_val": 1}, {"brand": "SK hynix", "model": "Platinum P51", "date": "~Late 2025", "cap": "2TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "aries", "controller": "Aries", "nand": "SK hynix 238L+ TLC", "dram": "Yes", "speed": "~14,200R", "tbw": "~1,200 TBW", "notes": "Best sustained write performance in class", "read_val": 14200, "write_val": 0, "tbw_val": 1200, "price_val": null, "cap_val": 2}, {"brand": "SK hynix", "model": "Platinum P51", "date": "~Late 2025", "cap": "4TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "aries", "controller": "Aries", "nand": "SK hynix 238L+ TLC", "dram": "Yes", "speed": "~14,200R", "tbw": "~2,400 TBW", "notes": "Strong pick for video editing (ProRes RAW, multicam 8K)", "read_val": 14200, "write_val": 0, "tbw_val": 2400, "price_val": null, "cap_val": 4}, {"brand": "TeamGroup", "model": "T-Force GE PRO", "date": "May 2024", "cap": "1TB", "part": "Not listed by SKU", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "YMTC 232L Xtacking 3.0 TLC", "dram": "2GB SK hynix DDR4-3200", "speed": "~13,000R / ~10,000W", "tbw": "~700 TBW", "notes": "Was still \"in the works\" at initial launch behind the 2TB/4TB models", "read_val": 13000, "write_val": 10000, "tbw_val": 700, "price_val": null, "cap_val": 1}, {"brand": "TeamGroup", "model": "T-Force GE PRO", "date": "May 2024", "cap": "2TB", "part": "TM8FG3002TOC133", "msrp": "$260", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "YMTC 232L Xtacking 3.0 TLC", "dram": "2GB SK hynix DDR4-3200", "speed": "14,000R / 11,800W", "tbw": "1,400 TBW", "notes": "$260 launch price; one of the first InnoGrit IG5666 drives on the market", "read_val": 14000, "write_val": 11800, "tbw_val": 1400, "price_val": 260.0, "cap_val": 2}, {"brand": "TeamGroup", "model": "T-Force GE PRO", "date": "May 2024", "cap": "4TB", "part": "Not listed by SKU", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "YMTC 232L Xtacking 3.0 TLC", "dram": "SK hynix DDR4-3200", "speed": "14,000R / 11,800W", "tbw": "~2,800 TBW", "notes": "", "read_val": 14000, "write_val": 11800, "tbw_val": 2800, "price_val": null, "cap_val": 4}, {"brand": "TeamGroup", "model": "T-Force GE PRO", "date": "TBD", "cap": "8TB", "part": "Not listed by SKU", "msrp": "\u2014", "controller_class": "budget", "controller": "InnoGrit IG5666", "nand": "YMTC 232L Xtacking 3.0 TLC", "dram": "SK hynix DDR4", "speed": "~14,000R", "tbw": "~5,600 TBW", "notes": "Demonstrated by TeamGroup at 8TB capacity; retail release/pricing not yet confirmed", "read_val": 14000, "write_val": 0, "tbw_val": 5600, "price_val": null, "cap_val": 8}, {"brand": "TeamGroup", "model": "T-Force Z540", "date": "2023", "cap": "1TB", "part": "TM8FF1001T0C129", "msrp": "$139.99", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L TLC", "dram": "Yes (LPDDR4)", "speed": "11,700R / 9,500W", "tbw": "600 TBW", "notes": "$139.99 MSRP", "read_val": 11700, "write_val": 9500, "tbw_val": 600, "price_val": 139.99, "cap_val": 1}, {"brand": "TeamGroup", "model": "T-Force Z540", "date": "2023", "cap": "2TB", "part": "TM8FF1002T0C129", "msrp": "$219.99\u2013269", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L TLC", "dram": "Yes (LPDDR4)", "speed": "12,400R / 11,800W", "tbw": "1,200 TBW", "notes": "$219.99\u2013$269 MSRP depending on region; sweet-spot capacity in the lineup", "read_val": 12400, "write_val": 11800, "tbw_val": 1200, "price_val": 219.99, "cap_val": 2}, {"brand": "TeamGroup", "model": "T-Force Z540", "date": "2023", "cap": "4TB", "part": "TM8FF1004T0C129", "msrp": "$431.99", "controller_class": "e26", "controller": "E26", "nand": "Micron 232L TLC", "dram": "Yes (LPDDR4)", "speed": "12,400R / 11,800W", "tbw": "2,400 TBW", "notes": "$431.99 MSRP", "read_val": 12400, "write_val": 11800, "tbw_val": 2400, "price_val": 431.99, "cap_val": 4}, {"brand": "TeamGroup", "model": "T-Force Z540", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "e26", "controller": "E26", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered \u2014 Phison E26 is capped at 4TB", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}, {"brand": "Western Digital", "model": "SN8100", "date": "May 2025", "cap": "1TB", "part": "WDS100T1XHE", "msrp": "$155", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia/SanDisk BiCS8 218L TLC", "dram": "LPDDR4", "speed": "~14,900R / ~7,500W", "tbw": "~600 TBW", "notes": "Lower write speed at 1TB \u2014 fewer dies in parallel", "read_val": 14900, "write_val": 7500, "tbw_val": 600, "price_val": 155.0, "cap_val": 1}, {"brand": "Western Digital", "model": "SN8100", "date": "May 2025", "cap": "2TB", "part": "WDS200T1XHE", "msrp": "$220", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia/SanDisk BiCS8 218L TLC", "dram": "LPDDR4", "speed": "14,900R / 11,000W", "tbw": "~1,200 TBW", "notes": "Best 4K random performance in class", "read_val": 14900, "write_val": 11000, "tbw_val": 1200, "price_val": 220.0, "cap_val": 2}, {"brand": "Western Digital", "model": "SN8100", "date": "May 2025", "cap": "4TB", "part": "WDS400T1XHE", "msrp": "$450", "controller_class": "sm2508", "controller": "SM2508", "nand": "Kioxia/SanDisk BiCS8 218L TLC", "dram": "LPDDR4", "speed": "14,900R / 11,000W", "tbw": "~2,400 TBW", "notes": "Best thermals among top-tier Gen5 drives", "read_val": 14900, "write_val": 11000, "tbw_val": 2400, "price_val": 450.0, "cap_val": 4}, {"brand": "Western Digital", "model": "SN8100", "date": "\u2014", "cap": "8TB", "part": "\u2014", "msrp": "\u2014", "controller_class": "sm2508", "controller": "SM2508", "nand": "\u2014", "dram": "\u2014", "speed": "\u2014", "tbw": "\u2014", "notes": "Not offered under WD_Black branding \u2014 see \"SanDisk Optimus GX Pro 8100\" for the identical-hardware 8TB SKU", "read_val": 0, "write_val": 0, "tbw_val": 0, "price_val": null, "cap_val": 8}];
+let sortKey = 'brand';
+let sortDir = 1; // 1 asc, -1 desc
+
+function escapeHtml(s) {
+  if (s === undefined || s === null) return '';
+  return String(s);
+}
+
+function badgeHtml(cls, text) {
+  if (!cls) return '<span class="badge budget"><span class="dot"></span>—</span>';
+  return `<span class="badge ${cls}"><span class="dot"></span>${escapeHtml(text)}</span>`;
+}
+
+function speedHtml(speedStr) {
+  if (!speedStr || speedStr === '—') return '—';
+  // format "14,900R / 11,000W" style text into colored spans
+  const parts = speedStr.split('/').map(s => s.trim());
+  const out = parts.map(p => {
+    if (p.endsWith('R')) return `<span class="r">${p}</span>`;
+    if (p.endsWith('W')) return `<span class="w">${p}</span>`;
+    return p;
+  });
+  return out.join(' <span class="sep">/</span> ');
+}
+
+function rowHtml(row, isGroupStart) {
+  const trClass = isGroupStart ? ' class="group-start"' : '';
+  return `<tr${trClass}>
+    <td class="model"><span class="brand">${escapeHtml(row.brand)}</span>${escapeHtml(row.model)}</td>
+    <td class="date">${escapeHtml(row.date)}</td>
+    <td class="cap">${escapeHtml(row.cap)}</td>
+    <td class="part">${escapeHtml(row.part)}</td>
+    <td class="msrp">${escapeHtml(row.msrp)}</td>
+    <td>${badgeHtml(row.controller_class, row.controller)}</td>
+    <td class="nand">${escapeHtml(row.nand)}</td>
+    <td>${escapeHtml(row.dram)}</td>
+    <td class="speed">${speedHtml(row.speed)}</td>
+    <td class="tbw">${escapeHtml(row.tbw)}</td>
+    <td class="notes">${escapeHtml(row.notes)}</td>
+  </tr>`;
+}
+
+function applyFiltersAndSort() {
+  const searchVal = document.getElementById('searchBox').value.trim().toLowerCase();
+  const controllerVal = document.getElementById('controllerFilter').value;
+  const capVal = document.getElementById('capFilter').value;
+
+  let filtered = SSD_DATA.filter(row => {
+    if (controllerVal && row.controller_class !== controllerVal) return false;
+    if (capVal && String(row.cap_val) !== capVal) return false;
+    if (searchVal) {
+      const haystack = [row.brand, row.model, row.controller, row.nand, row.part, row.notes, row.dram]
+        .join(' ').toLowerCase();
+      if (!haystack.includes(searchVal)) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  filtered.sort((a, b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (sortKey === 'brand') {
+      // secondary sort by model, then cap_val, keep original relative order for capacity tiers
+      const brandCmp = String(a.brand).localeCompare(String(b.brand));
+      if (brandCmp !== 0) return brandCmp * sortDir;
+      const modelCmp = String(a.model).localeCompare(String(b.model));
+      if (modelCmp !== 0) return modelCmp * sortDir;
+      return (a.cap_val - b.cap_val) * sortDir;
+    }
+    if (typeof av === 'number' || typeof bv === 'number') {
+      av = (av === null || av === undefined) ? -Infinity : av;
+      bv = (bv === null || bv === undefined) ? -Infinity : bv;
+      return (av - bv) * sortDir;
+    }
+    return String(av).localeCompare(String(bv)) * sortDir;
+  });
+
+  // Render, marking group-start when brand+model changes from previous row
+  const tbody = document.getElementById('tableBody');
+  const emptyState = document.getElementById('emptyState');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    emptyState.style.display = 'block';
+  } else {
+    emptyState.style.display = 'none';
+    let html = '';
+    let lastKey = null;
+    for (const row of filtered) {
+      const key = row.brand + '|' + row.model;
+      const isGroupStart = key !== lastKey;
+      html += rowHtml(row, isGroupStart);
+      lastKey = key;
+    }
+    tbody.innerHTML = html;
+  }
+
+  document.getElementById('resultCount').textContent = filtered.length + ' of ' + SSD_DATA.length + ' rows';
+
+  // update header sort indicators
+  document.querySelectorAll('#headerRow th').forEach(th => {
+    th.classList.remove('sorted');
+    const arrow = th.querySelector('.arrow');
+    if (arrow) arrow.textContent = '';
+  });
+  const activeTh = document.querySelector(`#headerRow th[data-key="${sortKey}"]`);
+  if (activeTh) {
+    activeTh.classList.add('sorted');
+    const arrow = activeTh.querySelector('.arrow');
+    if (arrow) arrow.textContent = sortDir === 1 ? '▲' : '▼';
+  }
+}
+
+function renderPicks() {
+  const picks = [
+    {
+      label: 'Best Overall Value',
+      drive: 'WD_Black SN8100 2TB',
+      why: 'Top-tier speed and 4K random performance at a price that\'s already been discounted well below launch.'
+    },
+    {
+      label: 'Best Endurance',
+      drive: 'Kingston FURY Renegade G5',
+      why: 'Rated 1,000 TBW per TB of capacity — roughly double most Gen5 rivals at the same size.'
+    },
+    {
+      label: 'Best Power Efficiency',
+      drive: 'Corsair MP700 Pro XT',
+      why: 'Phison E28 draws near-Gen4 power (~5.7–6.5W active) — rated to run without a heatsink for most workloads.'
+    },
+    {
+      label: 'Best for Sustained Writes',
+      drive: 'SK hynix Platinum P51',
+      why: 'Doesn\'t fall off after the SLC cache empties — best pick for large video/creative workloads.'
+    },
+    {
+      label: 'Best High-Capacity Pick',
+      drive: 'Samsung 9100 Pro 8TB',
+      why: 'Full-speed performance at the largest capacity available, with a mature in-house controller+NAND stack.'
+    },
+    {
+      label: 'Best Budget Gen5',
+      drive: 'PNY CS3250 1TB',
+      why: 'Newest-generation E28 controller and BiCS8 NAND at the lowest entry price in this list.'
+    }
+  ];
+  const container = document.getElementById('picks');
+  container.innerHTML = picks.map(p => `
+    <div class="pick-card">
+      <div class="pick-label">${p.label}</div>
+      <div class="pick-drive">${p.drive}</div>
+      <div class="pick-why">${p.why}</div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('searchBox').addEventListener('input', applyFiltersAndSort);
+document.getElementById('controllerFilter').addEventListener('change', applyFiltersAndSort);
+document.getElementById('capFilter').addEventListener('change', applyFiltersAndSort);
+
+document.querySelectorAll('#headerRow th[data-key]').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.getAttribute('data-key');
+    if (sortKey === key) {
+      sortDir *= -1;
+    } else {
+      sortKey = key;
+      sortDir = 1;
+    }
+    applyFiltersAndSort();
+  });
+});
+
+renderPicks();
+applyFiltersAndSort();
+</script>
+</body>
+</html>
