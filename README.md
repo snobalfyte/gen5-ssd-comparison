@@ -1,2 +1,2 @@
 # gen5-ssd-comparison
-[Link](https://snobalfyte.github.io/gen5-ssd-comparison/gen5-ssd-comparison.html)
+[Link](https://snobalfyte.github.io/gen5-ssd-comparison/gen5-ssd-comparison-v2.html)
